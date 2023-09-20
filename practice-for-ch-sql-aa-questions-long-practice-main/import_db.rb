@@ -63,6 +63,9 @@ class Questions
     def followers
         QuestionFollows.followers_for_question_id(id)
     end 
+    def likers
+        QuestionLike.likers_for_question_id(id)
+    end 
 end 
 class QuestionFollows 
     def self.all
@@ -82,24 +85,27 @@ class QuestionFollows
         SQL
         data.map {|datum| Users.new(datum) }
     end 
-    def self.most_followed_questions(n)
-        data = QuestionsDatabase.instance.execute(<<-SQL, n)
+    def self.most_followed_questions(num)
+        data = QuestionsDatabase.instance.execute(<<-SQL, num)
         SELECT
-            question_id, COUNT(user_id) AS num_follows
+            questions.id AS id, title, body, associated_author
          FROM 
-            question_follows 
+            questions
         JOIN
-            questions ON question_follows.question_id = questions.id
+            question_follows ON question_follows.question_id = questions.id
         GROUP BY 
             question_id 
         ORDER BY
-            num_follows DESC
+            COUNT(user_id) DESC
         LIMIT ?
         SQL
         data.map {|datum| Questions.new(datum) }
     end 
+    def self.most_followed
+        QuestionFollows.most_followed_questions(1)
+    end 
 
-    def self.followed_questions_for_user_id(target_id)
+     def self.followed_questions_for_user_id(target_id)
         data = QuestionsDatabase.instance.execute(<<-SQL, target_id)
             SELECT
                 questions.id, questions.title, questions.body, questions.associated_author
@@ -165,4 +171,48 @@ class Replies
         data = QuestionsDatabase.instance.execute("SELECT * FROM replies WHERE #{id} = parent_id")
         data.map {|datum| Replies.new(datum)}
     end
+end 
+class QuestionLike 
+    def self.all
+        data = QuestionsDatabase.instance.execute("SELECT * FROM question_likes")
+        data.map {|datum| QuestionLike.new(datum) }
+    end
+    def self.likers_for_question_id(question)
+        data = QuestionsDatabase.instance.execute(<<-SQL, question)
+            SELECT 
+                *
+            FROM 
+                question_likes
+            WHERE 
+                question_id = ? 
+        SQL
+        data.map {|datum| QuestionLike.new(datum)}
+    end
+    def self.num_likes_for_question_id(question)
+        data = QuestionsDatabase.instance.execute(<<-SQL, question)
+        SELECT 
+            count(user_id)
+        FROM 
+            question_likes 
+        WHERE 
+            question_id = ?
+        SQL
+        #data.map {|datum| QuestionLike.new(datum)}
+    end 
+    def self.liked_questions_for_user_id(user)
+        data = QuestionsDatabase.instance.execute(<<-SQL, user)
+        SELECT 
+            question_id
+        FROM 
+            question_likes
+        WHERE 
+            user_id = ?
+        SQL
+    end 
+    def initialize(attributes)
+        @id = attributes['id']
+        @question_id = attributes['question_id']
+        @user_id = attributes['user_id']
+    end 
+    
 end 
