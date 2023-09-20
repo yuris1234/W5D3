@@ -24,6 +24,9 @@ class Users
         @fname = user_attributes['fname']
         @lname = user_attributes['lname']
     end 
+    def followed_questions
+        QuestionFollows.followed_questions_for_user_id(id)
+    end 
 
     def authored_questions
         Question.find_by_author_id(id)
@@ -57,6 +60,9 @@ class Questions
     def replies 
         Replies.find_by_question_id(id)
     end
+    def followers
+        QuestionFollows.followers_for_question_id(id)
+    end 
 end 
 class QuestionFollows 
     def self.all
