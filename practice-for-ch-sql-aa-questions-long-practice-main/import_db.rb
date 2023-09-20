@@ -85,15 +85,15 @@ class QuestionFollows
     def self.most_followed_questions(n)
         data = QuestionsDatabase.instance.execute(<<-SQL, n)
         SELECT
-            question_id 
-        FROM 
+            question_id, COUNT(user_id) AS num_follows
+         FROM 
             question_follows 
         JOIN
             questions ON question_follows.question_id = questions.id
         GROUP BY 
             question_id 
         ORDER BY
-            count(user_id)
+            num_follows DESC
         LIMIT ?
         SQL
         data.map {|datum| Questions.new(datum) }
