@@ -74,8 +74,24 @@ class QuestionFollows
         WHERE 
             question_follows.question_id = ? 
         SQL
-        data.map {|datum| QuestionFollows.new(datum) }
+        data.map {|datum| Users.new(datum) }
     end 
+
+    def self.followed_questions_for_user_id(target_id)
+        data = QuestionsDatabase.instance.execute(<<-SQL, target_id)
+            SELECT
+                questions.id, questions.title, questions.body, questions.associated_author
+            FROM
+                questions
+            JOIN
+                question_follows ON questions.id = question_follows.question_id
+            JOIN
+                users ON users.id = question_follows.user_id
+            WHERE
+                users.id = ?
+        SQL
+        data.map {|datum| Questions.new(datum)}
+    end
 
     def initialize(question_follows_attributes)
         @id = question_follows_attributes['id']
