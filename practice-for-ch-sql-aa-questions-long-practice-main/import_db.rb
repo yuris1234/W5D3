@@ -63,12 +63,26 @@ class QuestionFollows
         data = QuestionsDatabase.instance.execute("SELECT * FROM question_follows")
         data.map {|datum| QuestionFollows.new(datum) }
     end
+    def self.followers_for_question_id(question_id)
+        data = QuestionsDatabase.instance.execute(<<-SQL, question_id)
+        SELECT 
+            * 
+        FROM 
+            users 
+        JOIN 
+            question_follows ON users.id = question_follows.user_id
+        WHERE 
+            question_follows.question_id = ? 
+        SQL
+        data.map {|datum| QuestionFollows.new(datum) }
+    end 
 
     def initialize(question_follows_attributes)
         @id = question_follows_attributes['id']
         @question_id = question_follows_attributes['question_id']
         @user_id = question_follows_attributes['user_id']
     end
+
 end
 class Replies
     def self.all 
@@ -105,7 +119,8 @@ class Replies
     end
 
     def parent_reply
-        @parent_id 
+        data = QuestionsDatabase.instance.execute("SELECT * FROM replies WHERE id = #{parent_id}")
+        data.map {|datum| Replies.new(datum)}
     end
 
     def child_replies
